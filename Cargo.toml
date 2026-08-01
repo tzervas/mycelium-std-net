@@ -23,7 +23,7 @@ ureq = { version = "3.3.0", default-features = true }
 # Pin mycelium-interp to mycelium-runtime main tip (S-HOST-REGISTRY primary dispatch, runtime#13).
 mycelium-interp = { git = "https://github.com/tzervas/mycelium-runtime", rev = "cb3a96348f718661dbd3db43224a036df272e177", optional = true }
 # Same core rev as mycelium-interp on that tip (encoding helpers + Value construction).
-mycelium-core = { git = "https://github.com/tzervas/mycelium-core", rev = "46d2515cbd86d2ae4d1365f4adcd2796737e9f0b", optional = true }
+mycelium-core = { git = "https://github.com/tzervas/mycelium-core", rev = "3958d2ea3c3921611e33f1f00e3469b29a939a76", optional = true }
 
 [lints]
 workspace = true

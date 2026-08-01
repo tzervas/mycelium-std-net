@@ -20,8 +20,8 @@ host-registry = ["dep:mycelium-interp", "dep:mycelium-core"]
 ureq = { version = "3.3.0", default-features = true }
 
 # Feature-gated: PrimRegistry dispatch table (interp) + Value encoding (core).
-# Pin mycelium-interp to mycelium-runtime main tip (A1 PrimRegistry reconcile, runtime#12).
-mycelium-interp = { git = "https://github.com/tzervas/mycelium-runtime", rev = "cfd2031ca12233e8ef97ab344d37f4399d8a157e", optional = true }
+# Pin mycelium-interp to mycelium-runtime main tip (S-HOST-REGISTRY primary dispatch, runtime#13).
+mycelium-interp = { git = "https://github.com/tzervas/mycelium-runtime", rev = "cb3a96348f718661dbd3db43224a036df272e177", optional = true }
 # Same core rev as mycelium-interp on that tip (encoding helpers + Value construction).
 mycelium-core = { git = "https://github.com/tzervas/mycelium-core", rev = "46d2515cbd86d2ae4d1365f4adcd2796737e9f0b", optional = true }
 

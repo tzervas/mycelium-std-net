@@ -192,7 +192,7 @@ dependencies = [
 [[package]]
 name = "mycelium-interp"
 version = "0.464.0"
-source = "git+https://github.com/tzervas/mycelium-runtime?rev=cfd2031ca12233e8ef97ab344d37f4399d8a157e#cfd2031ca12233e8ef97ab344d37f4399d8a157e"
+source = "git+https://github.com/tzervas/mycelium-runtime?rev=cb3a96348f718661dbd3db43224a036df272e177#cb3a96348f718661dbd3db43224a036df272e177"
 dependencies = [
  "blake3",
  "mycelium-core",
@@ -215,7 +215,7 @@ dependencies = [
 [[package]]
 name = "mycelium-sched"
 version = "0.464.0"
-source = "git+https://github.com/tzervas/mycelium-runtime?rev=cfd2031ca12233e8ef97ab344d37f4399d8a157e#cfd2031ca12233e8ef97ab344d37f4399d8a157e"
+source = "git+https://github.com/tzervas/mycelium-runtime?rev=cb3a96348f718661dbd3db43224a036df272e177#cb3a96348f718661dbd3db43224a036df272e177"
 dependencies = [
  "mycelium-core",
 ]

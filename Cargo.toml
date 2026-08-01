@@ -9,8 +9,8 @@ description = "std.net — blocking HTTPS client (ureq+rustls) + wild:http_reque
 publish = false
 
 [features]
-# HostCallRegistry install surface (WP-6 / S-STD-NET): depends on mycelium-interp's
-# PrimRegistry::register_host API (mycelium-runtime main / runtime#11). Off by default so
+# PrimRegistry install surface (WP-6 / S-STD-NET): depends on mycelium-interp's
+# PrimRegistry::register_host API (mycelium-runtime main / runtime#12 A1 reconcile). Off by default so
 # pure client consumers (gha-runner-ctl, tg-agent-relay) stay light.
 default = []
 host-registry = ["dep:mycelium-interp", "dep:mycelium-core"]
@@ -19,9 +19,9 @@ host-registry = ["dep:mycelium-interp", "dep:mycelium-core"]
 # Blocking HTTPS client (spike S3 locked: ureq + rustls). Default features = rustls + gzip.
 ureq = { version = "3.3.0", default-features = true }
 
-# Feature-gated: HostCallRegistry dispatch table (interp) + Value encoding (core).
-# Pin mycelium-interp to mycelium-runtime main tip (HostCallRegistry merged, runtime#11).
-mycelium-interp = { git = "https://github.com/tzervas/mycelium-runtime", rev = "4af6d0051f4da4961a108869c56407e32b9a372b", optional = true }
+# Feature-gated: PrimRegistry dispatch table (interp) + Value encoding (core).
+# Pin mycelium-interp to mycelium-runtime main tip (A1 PrimRegistry reconcile, runtime#12).
+mycelium-interp = { git = "https://github.com/tzervas/mycelium-runtime", rev = "cfd2031ca12233e8ef97ab344d37f4399d8a157e", optional = true }
 # Same core rev as mycelium-interp on that tip (encoding helpers + Value construction).
 mycelium-core = { git = "https://github.com/tzervas/mycelium-core", rev = "46d2515cbd86d2ae4d1365f4adcd2796737e9f0b", optional = true }
 

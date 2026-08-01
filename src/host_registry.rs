@@ -223,17 +223,44 @@ mod tests {
         let url = format!("http://{addr}/echo");
         let handle = thread::spawn(move || {
             let (mut stream, _) = listener.accept().expect("accept");
-            let mut buf = [0u8; 4096];
-            let n = stream.read(&mut buf).expect("read");
-            let req = String::from_utf8_lossy(&buf[..n]);
-            // minimal parse: look for body after \r\n\r\n
-            let body = req
-                .split("\r\n\r\n")
-                .nth(1)
-                .unwrap_or("")
-                .trim_end_matches('\0')
-                .as_bytes();
-            let body_owned = body.to_vec();
+            // Read until headers complete, then Content-Length body (TCP may split).
+            let mut raw = Vec::new();
+            let mut tmp = [0u8; 1024];
+            let header_end = loop {
+                let n = stream.read(&mut tmp).expect("read");
+                if n == 0 {
+                    break None;
+                }
+                raw.extend_from_slice(&tmp[..n]);
+                if let Some(pos) = raw.windows(4).position(|w| w == b"\r\n\r\n") {
+                    break Some(pos);
+                }
+                if raw.len() > 64 * 1024 {
+                    break None;
+                }
+            };
+            let body_owned = if let Some(pos) = header_end {
+                let headers = std::str::from_utf8(&raw[..pos]).unwrap_or("");
+                let mut content_len = 0usize;
+                for line in headers.lines() {
+                    let lower = line.to_ascii_lowercase();
+                    if let Some(rest) = lower.strip_prefix("content-length:") {
+                        content_len = rest.trim().parse().unwrap_or(0);
+                    }
+                }
+                let mut body = raw[pos + 4..].to_vec();
+                while body.len() < content_len {
+                    let n = stream.read(&mut tmp).expect("read body");
+                    if n == 0 {
+                        break;
+                    }
+                    body.extend_from_slice(&tmp[..n]);
+                }
+                body.truncate(content_len);
+                body
+            } else {
+                Vec::new()
+            };
             let resp = format!(
                 "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nContent-Type: text/plain\r\nConnection: close\r\nX-Echo: yes\r\n\r\n",
                 body_owned.len()

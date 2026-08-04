@@ -14,5 +14,32 @@ jobs:
         with:
           components: rustfmt, clippy
       - run: cargo fmt --check
+      # Default (`client` off; S-STD-NET-SAFE-HTTP split, PKG-LINKAGE mycelium-lang#44).
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo test
+      # `client` — src/client.rs's pure-Rust http_request (previously always compiled in; now
+      # explicit, since `ureq` became an optional dependency as part of the split).
+      - run: cargo clippy --all-targets --features client -- -D warnings
+      - run: cargo test --features client
+      # `host-registry` — wild:http_request (ascription-trusted; unchanged behavior/tests).
+      - run: cargo clippy --all-targets --features host-registry -- -D warnings
+      - run: cargo test --features host-registry
+      # `typed-prims` alone (no `client`, no `host-registry`) — pure PrimSig/TySpec signature
+      # data only. Measured requirement (S-STD-NET-SAFE-HTTP): must carry NO ureq/rustls edge, so
+      # a static `myc check` build can verify typed-prim call sites without linking a TLS stack.
+      - run: cargo clippy --all-targets --no-default-features --features typed-prims -- -D warnings
+      - run: cargo test --no-default-features --features typed-prims
+      - name: cargo tree shows no ureq/rustls edge under typed-prims alone
+        run: |
+          set -euo pipefail
+          out=$(cargo tree -e normal --no-default-features --features typed-prims)
+          if echo "$out" | grep -Eiq 'ureq|rustls'; then
+            echo "::error::typed-prims-only build pulled in ureq/rustls — the split regressed"
+            echo "$out"
+            exit 1
+          fi
+          echo "confirmed: no ureq/rustls edge"
+      # `typed-prims` + `host-registry` together — both dispatch paths (prim: and wild:) present
+      # in the same binary so the differential test can compare them against the same host.
+      - run: cargo clippy --all-targets --features typed-prims,host-registry -- -D warnings
+      - run: cargo test --features typed-prims,host-registry

@@ -5,24 +5,46 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "std.net — blocking HTTPS client (ureq+rustls) + wild:http_request host registry (WP-6 / S-STD-NET; spike S3 TLS)"
+description = "std.net — blocking HTTPS client (ureq+rustls), wild:http_request host registry (WP-6 / S-STD-NET; spike S3 TLS), and the checked prim:http_request/http_get typed-prim door (S-STD-NET-SAFE-HTTP / PKG-LINKAGE)"
 publish = false
 
 [features]
-# PrimRegistry install surface (WP-6 / S-STD-NET): depends on mycelium-interp's
-# PrimRegistry::register_host API (mycelium-runtime main / runtime#12 A1 reconcile). Off by default so
-# pure client consumers (gha-runner-ctl, tg-agent-relay) stay light.
+# `default = []`, unchanged (S-STD-NET-SAFE-HTTP split, PKG-LINKAGE / mycelium-lang#44).
+# BEHAVIOR CHANGE flagged for review: `ureq` used to be a non-optional dependency, so
+# `src/client.rs`'s pure-Rust `http_request` was always compiled in with NO flags at all, even
+# though `default = []`. That is also precisely why `typed-prims` alone could never actually avoid
+# the ureq/rustls edge before this split — a non-optional dep is in the build graph regardless of
+# `--features`. Making `ureq` optional behind a new `client` feature is the only way to satisfy the
+# measured goal ("a static myc-check build must be able to load typed_prim_sigs() ... without
+# linking a TLS stack" — PKG-LINKAGE checkable_done). Consumers relying on the previous no-flags
+# `use mycelium_std_net::http_request` must now add `--features client` explicitly (see README).
 default = []
-host-registry = ["dep:mycelium-interp", "dep:mycelium-core"]
+client = ["dep:ureq"]
+# PrimRegistry install surface (WP-6 / S-STD-NET): `wild:http_request` (ascription-trusted).
+# Needs `client` for the actual request plus mycelium-interp/-core for PrimRegistry/Value.
+host-registry = ["client", "dep:mycelium-interp", "dep:mycelium-core"]
+# S-STD-NET-SAFE-HTTP (PKG-LINKAGE, mycelium-lang#44): the checked, non-`wild` `prim:http_request`
+# / `prim:http_get` door. `typed_prim_sigs()` (pure PrimSig/TySpec data, `src/typed_prims.rs`)
+# needs only mycelium-interp/-core — measured (`cargo tree -e normal --no-default-features
+# --features typed-prims`) to carry NO ureq/rustls edge, so a static `myc check` build can verify
+# typed-prim call sites without linking a TLS stack. The actual dispatch
+# (`install_typed_http_prims`) additionally needs `client` for the real request — see
+# `src/typed_prims.rs` module docs.
+typed-prims = ["dep:mycelium-interp", "dep:mycelium-core"]
 
 [dependencies]
 # Blocking HTTPS client (spike S3 locked: ureq + rustls). Default features = rustls + gzip.
-ureq = { version = "3.3.0", default-features = true }
+# Optional (feature `client`, OFF by default like `host-registry`/`typed-prims`) —
+# S-STD-NET-SAFE-HTTP split so `typed-prims` alone can link with no TLS stack (PKG-LINKAGE,
+# mycelium-lang#44).
+ureq = { version = "3.3.0", default-features = true, optional = true }
 
-# Feature-gated: PrimRegistry dispatch table (interp) + Value encoding (core).
-# Pin mycelium-interp to mycelium-runtime main tip (S-HOST-REGISTRY primary dispatch, runtime#13).
-mycelium-interp = { git = "https://github.com/tzervas/mycelium-runtime", rev = "7842042d770108b2d179ff2874f1871dc4821604", optional = true }
-# Same core rev as mycelium-interp on that tip (encoding helpers + Value construction).
+# Feature-gated: PrimRegistry/TypedPrimRegistry dispatch tables (interp) + Value encoding (core).
+# Pin mycelium-interp to mycelium-runtime main tip (S-PRIMSIG-SCHEMA / S-TYPED-PRIM-REGISTRY,
+# runtime#18/#19 — adds `typed.rs`; `host.rs`/`prims.rs` byte-identical over this repin, verified by
+# diffing the two pinned revs).
+mycelium-interp = { git = "https://github.com/tzervas/mycelium-runtime", rev = "f683712fe5b701ad8b062a4b04195fbcdc15143b", optional = true }
+# Same core rev as mycelium-interp on that tip (encoding helpers + Value construction) — unchanged.
 mycelium-core = { git = "https://github.com/tzervas/mycelium-core", rev = "57ef45b453eef1f02bdfb1f0cad1034dabd32b1f", optional = true }
 
 [lints]

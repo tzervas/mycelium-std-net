@@ -10,12 +10,14 @@ Rust std.net phylum: **blocking HTTPS client** (ureq + rustls) for the Mycelium 
 
 | Field | Value |
 |---|---|
-| **Work package** | WP-6 / S-STD-NET |
-| **Hub** | [mycelium-lang#30](https://github.com/tzervas/mycelium-lang/issues/30) |
-| **Stack** | ureq 3.x + rustls (blocking; client-only) |
-| **Wild** | `wild:http_request` (feature `host-registry`) |
+| **Work package** | WP-6 / S-STD-NET; WP-10 / PKG-LINKAGE (S-STD-NET-SAFE-HTTP) |
+| **Hub** | [mycelium-lang#30](https://github.com/tzervas/mycelium-lang/issues/30), [mycelium-lang#44](https://github.com/tzervas/mycelium-lang/issues/44) |
+| **Stack** | ureq 3.x + rustls (blocking; client-only), feature `client` |
+| **Wild** | `wild:http_request` — ascription-trusted (feature `host-registry`) |
+| **Typed** | `prim:http_request` / `prim:http_get` — checked (feature `typed-prims`) |
 | **License** | MIT |
 | **Honesty** | Guarantee tags stay **Declared** until differential upgrades |
+| **`default` features** | `[]` — every feature above is opt-in (BEHAVIOR NOTE: before the S-STD-NET-SAFE-HTTP split, `ureq` was a non-optional dependency, so the plain-Rust `http_request` client was always compiled in regardless of flags even though `default` was already `[]`; it now genuinely needs `--features client`) |
 
 ## Pin-home FREEZE
 
@@ -23,23 +25,47 @@ Rust std.net phylum: **blocking HTTPS client** (ureq + rustls) for the Mycelium 
 
 ## API (Rust)
 
-```rust,no_run
-use mycelium_std_net::{http_request, HttpResponse, NetError};
+Needs feature `client` (see [Build](#build) — split from `typed-prims` so a checker never needs
+to link ureq/rustls just to read a signature, S-STD-NET-SAFE-HTTP / PKG-LINKAGE):
 
-fn main() -> Result<(), NetError> {
-    let resp: HttpResponse = http_request(
-        "GET",
-        "https://example.com/",
-        &[("Accept".into(), "text/plain".into())],
-        b"",
-        Some(5_000), // timeout_ms
-    )?;
-    assert!(resp.status >= 100);
-    Ok(())
-}
+```rust,no_run
+# #[cfg(feature = "client")] fn __doctest() -> Result<(), mycelium_std_net::NetError> {
+use mycelium_std_net::{http_request, HttpResponse};
+
+let resp: HttpResponse = http_request(
+    "GET",
+    "https://example.com/",
+    &[("Accept".into(), "text/plain".into())],
+    b"",
+    Some(5_000), // timeout_ms
+)?;
+assert!(resp.status >= 100);
+# Ok(())
+# }
 ```
 
 `POST` (and other methods) use the same entry point with a body slice.
+
+## Checked, non-`wild` API (feature `typed-prims`; S-STD-NET-SAFE-HTTP)
+
+```rust,ignore
+// requires feature = "typed-prims" (pure signature data — no ureq/rustls edge)
+use mycelium_std_net::typed_prim_sigs;
+
+for sig in typed_prim_sigs() {
+    assert_eq!(sig.effects, vec!["net".to_owned()]);
+}
+```
+
+```rust,ignore
+// requires feature = "typed-prims" AND "client" for the actual dispatch
+use mycelium_interp::typed::TypedPrimRegistry;
+use mycelium_std_net::install_typed_http_prims;
+
+let mut reg = TypedPrimRegistry::empty();
+install_typed_http_prims(&mut reg);
+// registers prim:http_request, prim:http_get
+```
 
 ## Wild host install (feature `host-registry`)
 
@@ -64,14 +90,20 @@ install_http_host_ops(&mut reg);
 MSRV 1.96.1.
 
 ```bash
-cargo test
-cargo test --features host-registry
+cargo test                                    # error.rs, guarantee_matrix.rs only (default = [])
+cargo test --features client                  # + src/client.rs's http_request
+cargo test --features host-registry           # + wild:http_request (implies client)
+cargo test --no-default-features --features typed-prims          # pure PrimSig data, no ureq/rustls
+cargo test --features typed-prims,host-registry                  # + prim:http_request/http_get dispatch
+cargo tree -e normal --no-default-features --features typed-prims  # confirm no ureq/rustls edge
 ```
 
-Live HTTPS smoke is `#[ignore]` (needs network):
+Live HTTPS smoke (both `wild:http_request` and the typed `prim:` differential check) is
+`#[ignore]` (needs outbound network). Run it with every feature enabled, so every doctest example
+also has the symbols its own snippet needs in scope:
 
 ```bash
-cargo test -- --ignored
+cargo test --features typed-prims,host-registry -- --ignored
 ```
 
 ## Consumers

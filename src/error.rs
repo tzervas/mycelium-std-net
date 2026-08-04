@@ -34,6 +34,7 @@ impl fmt::Display for NetError {
 
 impl std::error::Error for NetError {}
 
+#[cfg(feature = "client")]
 impl From<ureq::Error> for NetError {
     fn from(e: ureq::Error) -> Self {
         // ureq 3: status codes are not errors when http_status_as_error is false;

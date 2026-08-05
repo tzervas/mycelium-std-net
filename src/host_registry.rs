@@ -276,13 +276,13 @@ mod tests {
     #[test]
     fn install_registers_catalog_name() {
         let mut reg = PrimRegistry::with_builtins();
-        assert!(!reg.has_host("http_request"));
-        assert!(!reg.has_host("wild:http_request"));
+        assert!(reg.get("http_request").is_none());
+        assert!(reg.get("wild:http_request").is_none());
 
         install_http_host_ops(&mut reg);
 
-        assert!(reg.has_host("http_request"));
-        assert!(reg.has_host("wild:http_request"));
+        assert!(reg.get("http_request").is_none(), "bare name must not alias the wild: key");
+        assert!(reg.get("wild:http_request").is_some());
         assert!(reg.names().contains(&"wild:http_request"));
     }
 

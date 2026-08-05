@@ -281,7 +281,10 @@ mod tests {
 
         install_http_host_ops(&mut reg);
 
-        assert!(reg.get("http_request").is_none(), "bare name must not alias the wild: key");
+        assert!(
+            reg.get("http_request").is_none(),
+            "bare name must not alias the wild: key"
+        );
         assert!(reg.get("wild:http_request").is_some());
         assert!(reg.names().contains(&"wild:http_request"));
     }

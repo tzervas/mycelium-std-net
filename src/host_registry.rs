@@ -30,14 +30,15 @@
 //!
 //! # Catalog names
 //!
-//! Registered as bare `http_request`; [`PrimRegistry::register_host`] stores
-//! `wild:http_request`.
+//! Registered under the literal key `wild:http_request`. The prim registry stores
+//! host/FFI ops verbatim under the `wild:` namespace (RFC-0028 §4.3); there is no
+//! bare-name alias, so the prefix is part of the key.
 
 use mycelium_core::{
     Bound, BoundBasis, BoundKind, GuaranteeStrength, Meta, NormKind, Payload, Provenance, Repr,
     Value,
 };
-use mycelium_interp::{install_host_ops, prims::PrimFn, EvalError, PrimRegistry};
+use mycelium_interp::{prims::PrimFn, EvalError, PrimRegistry};
 
 use crate::client::{decode_headers, encode_headers, http_request};
 
@@ -46,11 +47,11 @@ use crate::client::{decode_headers, encode_headers, http_request};
 /// Registers:
 /// - `wild:http_request`
 ///
-/// Last registration for a name wins (same rule as [`install_host_ops`]). Safe to
+/// Last registration for a name wins ([`PrimRegistry::register`] overwrites). Safe to
 /// call after [`PrimRegistry::with_builtins`] and after
 /// `mycelium_std_sys_host::install_default_host_ops`.
 pub fn install_http_host_ops(reg: &mut PrimRegistry) {
-    install_host_ops(reg, &[("http_request", host_http_request as PrimFn)]);
+    reg.register("wild:http_request", host_http_request as PrimFn);
 }
 
 // --- encoding helpers ---------------------------------------------------------------------------

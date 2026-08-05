@@ -43,7 +43,7 @@ ureq = { version = "3.3.0", default-features = true, optional = true }
 # Pin mycelium-interp to mycelium-runtime main tip (S-PRIMSIG-SCHEMA / S-TYPED-PRIM-REGISTRY,
 # runtime#18/#19 — adds `typed.rs`; `host.rs`/`prims.rs` byte-identical over this repin, verified by
 # diffing the two pinned revs).
-mycelium-interp = { git = "https://github.com/tzervas/mycelium-runtime", rev = "f683712fe5b701ad8b062a4b04195fbcdc15143b", optional = true }
+mycelium-interp = { git = "https://github.com/tzervas/mycelium-runtime", rev = "ac883d2ca0f8da90dddd32ddd6385db58674e635", optional = true }
 # Same core rev as mycelium-interp on that tip (encoding helpers + Value construction) — unchanged.
 mycelium-core = { git = "https://github.com/tzervas/mycelium-core", rev = "57ef45b453eef1f02bdfb1f0cad1034dabd32b1f", optional = true }
 
